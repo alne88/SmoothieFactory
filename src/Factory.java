@@ -1,9 +1,11 @@
 import Products.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Factory{
 
     private List<Product> finishedProducts = Collections.synchronizedList(new ArrayList());
+    private List<Smoothie> smoothieBottles = Collections.synchronizedList(new ArrayList());
 
     public void makeProducts(ProductGroup fruitOrVegetable) {
         Product newProduct = null;
@@ -18,7 +20,7 @@ public class Factory{
                 break;
         }
 
-        addProductToList(newProduct);
+        finishedProducts.add(newProduct);
 
         try{
             Thread.sleep(20);
@@ -70,18 +72,135 @@ public class Factory{
         return newVeg;
     }
 
+    public Smoothie makeSmoothie(int smoothieChoice){
+
+            if (finishedProducts.isEmpty()){
+//                System.out.println("Cannot make smoothie, finished products list is empty");
+                return null;
+            }
+            switch (smoothieChoice){
+                case 1:     //toodab smuutit kõikidest köögiviljadest, millel on hakkimise aste ’väike’
+                    try {
+                        Product minChunkProduct = finishedProducts
+                                .stream()
+                                .filter(product -> product.getProductGroup().equals(ProductGroup.VEGETABLE) && product.getChunkSize().equals(Size.MIN))
+                                .findFirst()
+                                .get();
+
+                        Smoothie vegSmoothie = new Smoothie(minChunkProduct.getName() + " smoothie", minChunkProduct.getTotalCalories());
+                        smoothieBottles.add(vegSmoothie);
+                        finishedProducts.remove(minChunkProduct);
+                        return vegSmoothie;
+                    } catch (Exception e){
+                        // .get gives Exception java.util.NoSuchElementException: No value present
+                        // no product matching to these criterias was not found
+                    }
+                    break;
+
+                case 2:     //toodab smuutit banaanist ja pirnist
+                    try {
+                        Product banana = finishedProducts
+                                            .stream()
+                                            .filter(product -> product.getName().equals("BANANA"))
+                                            .findFirst()
+                                            .get();
+                        Product pear = finishedProducts
+                                            .stream()
+                                            .filter(product -> product.getName().equals("PEAR"))
+                                            .findFirst()
+                                            .get();
+
+                        Smoothie bananaPearSmoothie = new Smoothie("Banana+Pear smoothie", banana.getTotalCalories() + pear.getTotalCalories());
+                        smoothieBottles.add(bananaPearSmoothie);
+                        finishedProducts.remove(banana);
+                        finishedProducts.remove(pear);
+                        return bananaPearSmoothie;
+                    } catch (Exception e){
+                        //exception when products found at the given time that match criterias
+                    }
+                    break;
+
+                case 3:     //toodab smuutit porgandist aga ainult siis, kui porgandit on kokku vähemalt kilo (kui liinil on nt 2x500g porgandit, siis see sobib)
+                    try {
+                        List<Product> foundCarrots = finishedProducts.stream().filter(product -> product.getName().equals("CARROT")).collect(Collectors.toList());
+                        Smoothie carrotSmoothie = new Smoothie("Carrot smoothie", 0);
+                        int sumOfWeight = 0;
+                        //get atleast 1kg worth of carrots
+
+                        for (Product product : foundCarrots) {
+                            sumOfWeight += product.getTotalWeightInGram();
+                            carrotSmoothie.setCalories(carrotSmoothie.getCalories() + product.getTotalCalories());
+                            if (sumOfWeight > 1000){
+                                //check if enough carrots are found, when yes, make now smoothie
+                                for (Product carrot : foundCarrots){
+                                    finishedProducts.remove(carrot);
+                                }
+                                smoothieBottles.add(carrotSmoothie);
+                                return carrotSmoothie;
+                            }
+                        }
+                    } catch (Exception e){
+                        //exception when products found at the given time that match criterias
+                    }
+                    break;
+
+                case 4:     //toodab smuutit porgandist ja banaanist
+                    try {
+                    Product carrotMix = finishedProducts
+                            .stream()
+                            .filter(product -> product.getName().equals("CARROT"))
+                            .findFirst()
+                            .get();
+                    Product bananaMix = finishedProducts
+                            .stream()
+                            .filter(product -> product.getName().equals("BANANA"))
+                            .findFirst()
+                            .get();
+
+                    Smoothie carrotBananaSmoothie = new Smoothie("Banana+Pear smoothie", bananaMix.getTotalCalories() + carrotMix.getTotalCalories());
+                    smoothieBottles.add(carrotBananaSmoothie);
+                    finishedProducts.remove(bananaMix);
+                    finishedProducts.remove(carrotMix);
+                    return carrotBananaSmoothie;
+
+                    } catch (Exception e){
+                        //exception when products found at the given time that match criterias
+                    }
+                    break;
+
+                case 5:     //toodab smuutit puuviljadest, kui kalorsus on alla 500
+                    try {
+                    Product lowCalFruit = finishedProducts
+                            .stream()
+                            .filter(product -> product.getProductGroup().equals(ProductGroup.FRUIT) && product.getTotalCalories()<500)
+                            .findFirst()
+                            .get();
+
+                    Smoothie lowCaloriesSmoothie = new Smoothie("Low Calories Fruit smoothie", lowCalFruit.getTotalCalories());
+                    smoothieBottles.add(lowCaloriesSmoothie);
+                    finishedProducts.remove(lowCalFruit);
+                    return lowCaloriesSmoothie;
+                    } catch (Exception e){
+                        //exception when products found at the given time that match criterias
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+        return null;
+    }
+
     private Size getRandSize(){
         int randSize = getRandBetween(1, 3);
-        Size size;
         if (randSize == 1){
-            size = Size.MIN;
+            return Size.MIN;
         } else
         if (randSize == 2){
-            size = Size.MED;
+            return Size.MED;
         } else {
-            size = Size.MAX;
+            return Size.MAX;
         }
-        return size;
     }
 
     public int getRandBetween(int min, int max){
@@ -93,31 +212,8 @@ public class Factory{
         return finishedProducts;
     }
 
-    public void addProductToList(Product newProduct){
-        if (finishedProducts.size() == 0) {
-            finishedProducts.add(newProduct);
-        } else {
-            for (Product product : finishedProducts) {
-                if (product.getProductGroup().equals(ProductGroup.FRUIT)){
-                    if (product.getName().equals(newProduct.getName())) {
-                        Product newPlusOld = product;
-                        newPlusOld.setTotalWeightInGram(product.getTotalWeightInGram() + newProduct.getTotalWeightInGram());
-                        newPlusOld.setTotalCalories(product.getTotalCalories() + newProduct.getTotalCalories());
-                        finishedProducts.set(finishedProducts.indexOf(product), newPlusOld);
-                    } else {
-                        finishedProducts.add(newProduct);
-                    }
-                } else {
-                    if (product.getName().equals(newProduct.getName()) && product.getChunkSize().equals(newProduct.getChunkSize())) {
-                        Product newPlusOld = product;
-                        newPlusOld.setTotalWeightInGram(product.getTotalWeightInGram() + newProduct.getTotalWeightInGram());
-                        newPlusOld.setTotalCalories(product.getTotalCalories() + newProduct.getTotalCalories());
-                        finishedProducts.set(finishedProducts.indexOf(product), newPlusOld);
-                    } else {
-                        finishedProducts.add(newProduct);
-                    }
-                }
-            }
-        }
+    public List<Smoothie> getSmoothieBottles() {
+        return smoothieBottles;
     }
+
 }

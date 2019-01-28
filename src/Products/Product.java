@@ -1,6 +1,6 @@
 package Products;
 
-public class Product {
+public  class Product {
     private ProductGroup productGroup;
     private String name;
     private int totalWeightInGram;

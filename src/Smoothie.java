@@ -1,9 +1,9 @@
 public class Smoothie {
 
     private String name;
-    private int calories;
+    private double calories;
 
-    public Smoothie(String name, int calories) {
+    public Smoothie(String name, double calories) {
         this.name = name;
         this.calories = calories;
     }
@@ -16,11 +16,19 @@ public class Smoothie {
         this.name = name;
     }
 
-    public int getCalories() {
+    public double getCalories() {
         return calories;
     }
 
-    public void setCalories(int calories) {
+    public void setCalories(double calories) {
         this.calories = calories;
+    }
+
+    @Override
+    public String toString() {
+        return "Smoothie{" +
+                "name='" + name + '\'' +
+                ", calories=" + calories +
+                '}';
     }
 }
